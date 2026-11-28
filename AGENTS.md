@@ -2,7 +2,7 @@
 
 > 给任何代码助手（Claude Code / Cursor / Codex / Copilot …）的第一份文件。
 > 读完这一页就能动手改代码，不必翻历史聊天记录。
-> 最后更新：2026-11-28 · 对应版本 1.0.3 (versionCode 14)
+> 最后更新：2026-11-28 · 对应版本 1.0.4 (versionCode 15)
 
 ---
 
@@ -94,7 +94,7 @@ openapk-tv/
 │   └── src/main/
 │       ├── AndroidManifest.xml
 │       ├── assets/catalog.json        ← 4.1MB 目录快照，3582 款应用 / 19 分类（快照 2026-11-22）
-│       ├── java/app/tvhub/            ← 全部源码，7 个文件 3300 行
+│       ├── java/app/tvhub/            ← 全部源码，7 个文件 5912 行
 │       └── res/values{,-zh-rCN}/strings.xml
 ├── art/                       ← 品牌标识（设计真源）
 │   ├── logo.svg               ← 应用图标/横幅的真源：猫耳电视 + 屏幕内机器人头（1024 画布）
@@ -196,8 +196,8 @@ versionName = "1.0.1"   // semver，给人看的
 骨架与规则见 `docs/releases/TEMPLATE.md`（用户要求：简短，别写成 changelog 论文）。
 
 ```bash
-git tag -a v1.0.3 -m "v1.0.3"
-git push origin main && git push origin v1.0.3   # 先 main 后 tag，别再 --follow-tags
+git tag -a v1.0.4 -m "v1.0.4"
+git push origin main && git push origin v1.0.4   # 先 main 后 tag，别再 --follow-tags
 ```
 
 **不要**再去网页手工建 Release：标题、正文、附件三样都容易漏（v1.0.1 就漏成了草稿）。

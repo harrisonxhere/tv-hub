@@ -24,8 +24,8 @@ android {
         /* 版本号：versionName 按 semver 走（首个公开版本 1.0.0），versionCode 每次发版 +1。
            versionCode 只增不减：真机装过上游 0.6.0（vc10），比它小的包无法覆盖安装，
            所以起点是 11，而不是从公式（major*10000+…）推出来的数。 */
-        versionCode = 14
-        versionName = "1.0.3"
+        versionCode = 15
+        versionName = "1.0.4"
         buildConfigField("String", "UPDATE_INDEX_URL", "\"$updateIndexUrl\"")
     }
 

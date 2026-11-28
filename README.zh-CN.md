@@ -12,10 +12,10 @@ Google Play 上的电视应用，只有愿意上架的那些。很多好用的�
 
 ## 下载
 
-最新版本：[**v1.0.3**](https://github.com/harrisonxhere/openapk-tv/releases/latest) — 3.2 MB，最低 Android 9（API 28），支持 armeabi-v7a / arm64-v8a / x86。
+最新版本：[**v1.0.4**](https://github.com/harrisonxhere/openapk-tv/releases/latest) — 3.2 MB，最低 Android 9（API 28），支持 armeabi-v7a / arm64-v8a / x86。
 
 ```bash
-adb install -r openapk-tv-1.0.3.apk
+adb install -r openapk-tv-1.0.4.apk
 ```
 
 包里不带 `testOnly`，电视上用 U 盘或文件管理器直接装即可。每个 Release 页都附 SHA256 供校验。

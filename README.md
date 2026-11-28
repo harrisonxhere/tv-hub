@@ -14,10 +14,10 @@ Google Play on TV only carries apps that publish there. Plenty of good TV apps o
 
 ## Download
 
-Latest: [**v1.0.3**](https://github.com/harrisonxhere/openapk-tv/releases/latest) — 3.2 MB, Android 9 (API 28) or newer, armeabi-v7a / arm64-v8a / x86.
+Latest: [**v1.0.4**](https://github.com/harrisonxhere/openapk-tv/releases/latest) — 3.2 MB, Android 9 (API 28) or newer, armeabi-v7a / arm64-v8a / x86.
 
 ```bash
-adb install -r openapk-tv-1.0.3.apk
+adb install -r openapk-tv-1.0.4.apk
 ```
 
 The package is not marked `testOnly`, so a USB stick or a file manager on the TV installs it as is. Every release page carries the SHA256.
