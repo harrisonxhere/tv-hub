@@ -85,6 +85,13 @@
     <string name="held_key_changed">此文件的签名密钥与 OpenAPK TV 为 %1$s 记录的不一致，已暂停更新等待确认。</string>
     <string name="held_sibling">这台电视上的 %1$s 是 %2$s 构建版本。请先卸载，再安装此版本。</string>
     <string name="held_other_build">这台电视上的 %1$s 来自其他人的构建版本，Android 不会用此文件更新它。</string>
+    <string name="held_title">更新已暂停</string>
+    <string name="held_uninstall">先卸载再装</string>
+    <string name="held_try">仍然尝试</string>
+    <string name="held_close">关闭</string>
+    <string name="held_uninstall_note">卸载会移除这台电视上的该应用及其数据，然后重新安装这个文件。</string>
+    <string name="action_held">签名不同</string>
+    <string name="failed_title">安装失败</string>
 
     <string name="by_maker">作者 %1$s</string>
     <string name="by_maker_fork">作者 %1$s · 派生自 %2$s</string>

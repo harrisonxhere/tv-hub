@@ -1182,7 +1182,8 @@ private fun PosterCard(
 
 @Composable
 private fun JobBar(job: Job?) {
-    if (job == null) return
+    /* Held 不是进行中的任务，画成 8% 的细线会让人以为卡住了 */
+    if (job == null || job is Job.Held) return
     val frac = (job as? Job.Downloading)?.fraction ?: if (job == Job.Installing) 0.9f else 0.08f
     Box(Modifier.fillMaxWidth().height(3.dp).background(Color(0x29FFFFFF))) {
         Box(Modifier.fillMaxHeight().fillMaxWidth(frac).background(Color.White))
@@ -2069,6 +2070,38 @@ private fun BoxScope.DetailScreen(
                 progress = (job as? Job.Downloading)?.fraction,
                 requester = handoff.target,
             ) { installOrOpen(ctx, app) }
+
+            /* 预检拦下来的「签名不同」必须有出口：之前只有 Job.Held 状态、没有界面，
+               用户看到的是点更新后一条卡住的细进度线，既没解释也装不上。 */
+            val hasOld = installed != null
+            when (job) {
+                is Job.Held -> JobDialog(
+                    title = str(R.string.held_title),
+                    body = job.message,
+                    note = if (hasOld) str(R.string.held_uninstall_note) else null,
+                    primary = if (hasOld) str(R.string.held_uninstall) else str(R.string.held_try),
+                    onPrimary = {
+                        if (hasOld) Installer.uninstallThenInstall(ctx, app) else Installer.start(ctx, app, force = true)
+                    },
+                    secondary = if (hasOld) str(R.string.held_try) else str(R.string.held_close),
+                    /* 已装旧版时第二键是「仍然尝试」：跳过预检交给系统，系统拒绝后走下面的 Failed 弹层 */
+                    onSecondary = {
+                        if (hasOld) Installer.start(ctx, app, force = true) else Installer.clear(app.id)
+                    },
+                    onDismiss = { Installer.clear(app.id) },
+                )
+                is Job.Failed -> JobDialog(
+                    title = str(R.string.failed_title),
+                    body = job.message,
+                    note = null,
+                    primary = str(R.string.held_close),
+                    onPrimary = { Installer.clear(app.id) },
+                    secondary = null,
+                    onSecondary = null,
+                    onDismiss = { Installer.clear(app.id) },
+                )
+                else -> Unit
+            }
 
             if (installed != null) {
                 Spacer(Modifier.height(8.dp))
@@ -2962,6 +2995,70 @@ private fun MirrorAskDialog(onSwitch: () -> Unit, onKeep: () -> Unit) {
     }
 }
 
+/* 任务被拦下或失败时的说明弹层：解释「为什么装不上」，并给出可执行的下一步。
+   跟 MirrorAskDialog 同构：遥控器方向键可达，默认焦点落在主操作上。 */
+@Composable
+private fun JobDialog(
+    title: String,
+    body: String,
+    note: String?,
+    primary: String,
+    onPrimary: () -> Unit,
+    secondary: String?,
+    onSecondary: (() -> Unit)?,
+    onDismiss: () -> Unit,
+) {
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val d = LocalDensity.current
+            val s = min(maxWidth.value / 1280f, maxHeight.value / 720f)
+            CompositionLocalProvider(LocalDensity provides Density(d.density * s, 1f)) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(Modifier.fillMaxSize().background(Color(0xA6000000)))
+
+                    Column(
+                        Modifier.width(620.dp)
+                            .cardShadow(RoundedCornerShape(22.dp), 34.dp)
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(C.Card)
+                            .padding(horizontal = 26.dp, vertical = 26.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier.size(30.dp).background(Color(0x24E7B24C), CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) { Ico(Icons.Shield, 15.dp, Color(0xFFE7B24C)) }
+                            Spacer(Modifier.width(11.dp))
+                            T(title, 20.sp, weight = FontWeight.Bold, tight = true)
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        T(body, 12.5.sp, color = C.Fg2, line = 1.65f)
+                        if (note != null) {
+                            Spacer(Modifier.height(10.dp))
+                            T(note, 11.sp, color = C.Fg3, line = 1.55f)
+                        }
+                        Spacer(Modifier.height(24.dp))
+
+                        val focus = remember { FocusRequester() }
+                        LaunchedEffect(Unit) { delay(120); runCatching { focus.requestFocus() } }
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            DarkBtn(
+                                primary, Modifier.weight(1f),
+                                requester = focus, dot = false, onClick = onPrimary,
+                            )
+                            if (secondary != null) GhostBtn(
+                                secondary, null,
+                                modifier = Modifier.weight(1f), height = 46.dp,
+                                onClick = { onSecondary?.invoke() },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun Seg(labels: List<String>, active: Int, fg: Color) {
     Row(
@@ -3518,6 +3615,7 @@ private fun vivid(base: Color, fallbackHue: Float): Color {
    ============================================================ */
 @Composable
 private fun installLabel(app: App, installed: Installed?, job: Job?): String = when {
+    job is Job.Held -> str(R.string.action_held)
     job is Job.Downloading -> "${(job.fraction * 100).toInt()}%"
     job == Job.Checking -> str(R.string.job_checking)
     job == Job.Installing -> str(R.string.job_installing)

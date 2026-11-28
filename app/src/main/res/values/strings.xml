@@ -83,6 +83,13 @@
     <string name="held_key_changed">This file is signed with a different key than the one OpenAPK TV recorded for %1$s. Held for review.</string>
     <string name="held_sibling">The %1$s on this TV is the %2$s build. Uninstall it first, then install this one.</string>
     <string name="held_other_build">The %1$s on this TV came from someone else\'s build. Android won\'t update it with this file.</string>
+    <string name="held_title">Update paused</string>
+    <string name="held_uninstall">Uninstall, then install</string>
+    <string name="held_try">Try anyway</string>
+    <string name="held_close">Close</string>
+    <string name="held_uninstall_note">Uninstalling removes this app and its data on this TV, then installs the file again.</string>
+    <string name="action_held">Signature differs</string>
+    <string name="failed_title">Install failed</string>
 
     <string name="by_maker">by %1$s</string>
     <string name="by_maker_fork">by %1$s · fork of %2$s</string>

@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageInstaller
 import android.net.Uri
 import android.os.Build
@@ -66,7 +67,7 @@ object Installer {
             .onFailure { runCatching { ctx.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
     }
 
-    fun start(ctx: Context, requested: App) {
+    fun start(ctx: Context, requested: App, force: Boolean = false) {
         /* 装哪个包以更新索引为准：catalog 里的 apks 是打包那天的，
            索引里才有最新 Release 的下载地址。没配置索引 / 没更新时原样返回。 */
         val app = UpdateIndex.effective(requested)
@@ -84,10 +85,14 @@ object Installer {
             try {
                 download(appCtx, apk, file) { done, total -> put(app.id, Job.Downloading(done, total)) }
                 put(app.id, Job.Checking)
-                val held = withContext(Dispatchers.IO) { checkSignature(appCtx, app, file) }
-                if (held != null) {
-                    put(app.id, Job.Held(held))
-                    return@launch
+                /* force 只在用户看过「签名不同」的说明、主动选「仍然尝试」时传 true：
+                   预检已经给过结论，再挡一次就变成死循环，交给系统去拒绝并回显原文。 */
+                if (!force) {
+                    val held = withContext(Dispatchers.IO) { checkSignature(appCtx, app, file) }
+                    if (held != null) {
+                        put(app.id, Job.Held(held))
+                        return@launch
+                    }
                 }
                 put(app.id, Job.Installing)
                 try {
@@ -242,6 +247,44 @@ object Installer {
     fun cancelled(id: String) {
         put(id, null)
     }
+
+    /** 用户看过「签名不同」的说明并关掉，把 Held 清掉，按钮回到正常文案 */
+    fun clear(id: String) = put(id, null)
+
+    /**
+     * 唯一能真正装上的路径：先在系统卸载界面卸掉电视上那份别人签名的安装，卸完自动接着装。
+     * 用 ACTION_DELETE 而不是 PackageInstaller.uninstall：后者在部分 TV ROM 上直接回失败且不给原因，
+     * 前者是系统自带的卸载流程，兼容性最好。卸载完成靠 ACTION_PACKAGE_REMOVED 监听，不靠返回值。
+     */
+    fun uninstallThenInstall(ctx: Context, app: App) {
+        val appCtx = ctx.applicationContext
+        val pkg = app.pkg
+        pendingRemoval?.let { runCatching { appCtx.unregisterReceiver(it) } }
+        val watcher = object : BroadcastReceiver() {
+            override fun onReceive(c: Context, intent: Intent) {
+                if (intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) return
+                if (intent.data?.schemeSpecificPart != pkg) return
+                runCatching { appCtx.unregisterReceiver(this) }
+                if (pendingRemoval === this) pendingRemoval = null
+                start(appCtx, app)
+            }
+        }
+        pendingRemoval = watcher
+        runCatching {
+            appCtx.registerReceiver(watcher, IntentFilter(Intent.ACTION_PACKAGE_REMOVED).apply { addDataScheme("package") })
+            appCtx.startActivity(
+                Intent(Intent.ACTION_DELETE, Uri.parse("package:$pkg")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        }.onFailure {
+            runCatching { appCtx.unregisterReceiver(watcher) }
+            pendingRemoval = null
+            failed(app.id, it.message ?: str(R.string.err_generic))
+        }
+        clear(app.id)
+    }
+
+    /** 等卸载结果的那只一次性接收器，避免重复注册泄漏 */
+    private var pendingRemoval: BroadcastReceiver? = null
 }
 
 class InstallResultReceiver : BroadcastReceiver() {
